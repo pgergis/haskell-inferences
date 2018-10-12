@@ -26,7 +26,7 @@ main = hspec $
           pretreat [rule1] `shouldBe` [(Set.fromList p1, c1)]
 
         it "reverse sorts rules by premise dependency" $ do
-          pretreat [rule1,rule2] `shouldBe` [(Set.fromList p2, c2), (Set.fromList p1, c1)]
+          pretreat [rule1,rule3,rule2] `shouldBe` [(Set.fromList p3, c3), (Set.fromList p2, c2), (Set.fromList p1, c1)]
 
       describe "inferoutputs" $ do
         it "infers nothing from rules if nothing is asserted" $ do
@@ -42,10 +42,10 @@ main = hspec $
           inferoutputs (pretreat [rule1]) p1 `shouldBe` [c1]
 
         it "infers all conclusions when all rule premises are asserted" $ do
-          inferoutputs (pretreat [rule1, rule3]) p1++p3 `shouldBe` [c1,c3]
+          inferoutputs (pretreat [rule1, rule3]) (p1++p3) `shouldBe` [c1,c3]
 
-        it "infers Rule 1 conclusion but not Rule 3 conclusion if Rule 1 premises asserted" $ do
+        it "infers Rule 1 conclusion but not Rule 3 conclusion if only Rule 1 premises asserted" $ do
           inferoutputs (pretreat [rule1,rule3]) p1 `shouldBe` [c1]
 
         it "infers all conclusions from chain of conclusions -> premises" $ do
-          inferoutputs (pretreat [rule1,rule2,rule3]) p1++["d","f"] `shouldBe` [c1,c2,c3]
+          inferoutputs (pretreat [rule1,rule2,rule3]) (p1++["d","f"]) `shouldBe` [c1,c2,c3]
