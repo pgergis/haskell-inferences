@@ -19,14 +19,14 @@ instance FromJSON Rule
 type Pretreated = [(Set.Set Type, Type)]
 
 pretreat :: [Rule] -> Pretreated
-pretreat rules = pretreatHelper [(Set.fromList (premises rule), conclusion rule) | rule <- rules]
+pretreat rules = pretreatSorter [(Set.fromList (premises rule), conclusion rule) | rule <- rules]
 
-pretreatHelper :: Pretreated -> Pretreated
-pretreatHelper [] = []
-pretreatHelper (rule@(prems, conc):rules) =
-  let prereqs = pretreatHelper [(p,c) | (p,c) <- rules, Set.member c prems]
-      dependencies = pretreatHelper [(p,c) | (p,c) <- rules, Set.notMember c prems]
-  in dependencies ++ [rule] ++ prereqs
+pretreatSorter :: Pretreated -> Pretreated
+pretreatSorter [] = []
+pretreatSorter (rule@(prems, conc):rules) =
+  let prereqs = pretreatSorter [(p,c) | (p,c) <- rules, Set.member c prems]
+      others = pretreatSorter [(p,c) | (p,c) <- rules, Set.notMember c prems]
+  in others ++ [rule] ++ prereqs
 
 inferoutputs :: Pretreated -> [Type] -> [Type]
 inferoutputs rules assertions = Set.elems $ inferoutputsHelper rules (Set.fromList assertions)
