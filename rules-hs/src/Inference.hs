@@ -34,6 +34,8 @@ inferoutputs rules assertions = Set.elems $ inferoutputsHelper rules (Set.fromLi
 inferoutputsHelper :: Pretreated -> Set.Set Type -> Set.Set Type
 inferoutputsHelper rules assertions = Set.difference (Prelude.foldr infer assertions rules) assertions
   where infer (prems,conc) knowledge =
-          if Set.isSubsetOf prems knowledge
+          if prems `containedIn` knowledge
           then Set.insert conc knowledge
           else knowledge
+        containedIn p k =
+          and $ Set.map ((flip Set.member) k) p
