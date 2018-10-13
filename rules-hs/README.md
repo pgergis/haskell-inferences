@@ -6,7 +6,7 @@
 
 O(n^2) worst case; O(n lg n) average
 
-Explanation: `pretreat` has two main tasks: converting Rules into a list of (Set Type, Type) tuples, and then sorting. The first step is linear in time complexity, but the sorting is more complex. Using a quicksort-style algorithm, for readability and efficiency, `pretreatSorter` recursively sorts each half of the list around a pivot. Since the halving is linear time, the sort is O(n*h) where h is the height of the recursion tree. In the worst case, this is ~O(n^2), but traditional average case analysis suggests that quicksort (and this function, by extension) can beat other O(n lg n) functions by up to 2-3x (see Skiena, pg 129). So, overall, `pretreat` has a dominant time complexity of O(n^2), worst case, and an average case of ~O(n lg n).
+Explanation: `pretreat` has two main tasks: converting Rules into a list of (Set Type, Type) tuples, and then sorting. The first step is linear in time complexity, but the sorting is more complex. Using a quicksort-style algorithm, for readability and efficiency, `pretreatSorter` recursively sorts each half of the list around a pivot. Since the halving is linear time, the sort is O(n*h) where h is the height of the recursion tree. In the worst case, this is ~O(n^2), but because of the effectively randomized pivot selection, it performs in O(n lg n) time on average. In fact, analysis suggests that quicksort (and this function, by extension) can beat other O(n lg n) sorting functions by up to 2-3x (see Skiena, pg 129). So, overall, `pretreat` has a dominant time complexity of O(n^2), worst case, and an average case of ~O(n lg n).
 
 ## Question 2: Analysis of `inferoutputs`
 
