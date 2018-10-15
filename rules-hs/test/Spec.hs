@@ -16,6 +16,9 @@ main = hspec $
     p3 = ["e","f"]
     c3 = "g"
     rule3 = Rule {premises = p3, conclusion = c3}
+    failing = [Rule {premises = ["E"], conclusion = "C"},
+               Rule {premises = ["G"], conclusion = "E"},
+               Rule {premises = ["H"], conclusion = "G"}]
   in
     describe "Inference" $ do
       describe "pretreat" $ do
@@ -49,3 +52,7 @@ main = hspec $
 
         it "infers all conclusions from chain of conclusions -> premises" $ do
           inferoutputs (pretreat [rule1,rule2,rule3]) (p1++["d","f"]) `shouldBe` [c1,c2,c3]
+
+      describe "failing test" $ do
+        it "this ruleset fails to produce the correct output" $ do
+          inferoutputs (pretreat failing) (["H"]) `shouldBe` ["C", "E", "G"]
