@@ -16,6 +16,9 @@ main = hspec $
     p3 = ["e","f"]
     c3 = "g"
     rule3 = Rule {premises = p3, conclusion = c3}
+    failing = [Rule {premises = ["E"], conclusion = "C"},
+               Rule {premises = ["G"], conclusion = "E"},
+               Rule {premises = ["H"], conclusion = "G"}]
   in
     describe "Inference" $ do
       describe "pretreat" $ do
@@ -25,8 +28,26 @@ main = hspec $
         it "returns the type-modified rule if one rule is given" $
           pretreat [rule1] `shouldBe` [(Set.fromList p1, c1)]
 
-        it "reverse sorts rules by premise dependency" $ do
+        it "returns list where no premises appear in proceeding conclusions (1 of 7)" $ do
           pretreat [rule1,rule3,rule2] `shouldBe` [(Set.fromList p3, c3), (Set.fromList p2, c2), (Set.fromList p1, c1)]
+
+        it "returns list where no premises appear in proceeding conclusions (2 of 7)" $ do
+          pretreat [rule1,rule2,rule3] `shouldBe` [(Set.fromList p3, c3), (Set.fromList p2, c2), (Set.fromList p1, c1)]
+
+        it "returns list where no premises appear in proceeding conclusions (3 of 7)" $ do
+          pretreat [rule2,rule1,rule3] `shouldBe` [(Set.fromList p3, c3), (Set.fromList p2, c2), (Set.fromList p1, c1)]
+
+        it "returns list where no premises appear in proceeding conclusions (4 of 7)" $ do
+          pretreat [rule2,rule3,rule1] `shouldBe` [(Set.fromList p3, c3), (Set.fromList p2, c2), (Set.fromList p1, c1)]
+
+        it "returns list where no premises appear in proceeding conclusions (5 of 7)" $ do
+          pretreat [rule3,rule1,rule2] `shouldBe` [(Set.fromList p3, c3), (Set.fromList p2, c2), (Set.fromList p1, c1)]
+
+        it "returns list where no premises appear in proceeding conclusions (6 of 7)" $ do
+          pretreat [rule3,rule2,rule1] `shouldBe` [(Set.fromList p3, c3), (Set.fromList p2, c2), (Set.fromList p1, c1)]
+
+        it "returns list where no premises appear in proceeding conclusions (7 of 7)" $ do
+          pretreat failing `shouldBe` reverse [(Set.fromList ["H"], "G"), (Set.fromList ["G"], "E"), (Set.fromList ["E"], "C")]
 
       describe "inferoutputs" $ do
         it "infers nothing from rules if nothing is asserted" $ do
@@ -49,3 +70,7 @@ main = hspec $
 
         it "infers all conclusions from chain of conclusions -> premises" $ do
           inferoutputs (pretreat [rule1,rule2,rule3]) (p1++["d","f"]) `shouldBe` [c1,c2,c3]
+
+      describe "failing test" $ do
+        it "this ruleset fails to produce the correct output" $ do
+          inferoutputs (pretreat failing) (["H"]) `shouldBe` ["C", "E", "G"]
