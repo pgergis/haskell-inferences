@@ -32,24 +32,24 @@ pretreatSort :: [Syllogism] -> Pretreated
 pretreatSort rules = dfsSort rules Set.empty []
 
 dfsSort :: [Syllogism] -> Set.Set Syllogism -> [Syllogism] -> Pretreated
-dfsSort graph visited sortedStack =
+dfsSort graph visited stack =
   let
-      visited' = Set.union visited (Set.fromList (sortedStack))
+      visited' = Set.union visited (Set.fromList (stack))
       unvisited = filter (\a -> Set.notMember a visited') graph
   in
     if unvisited == []
-    then sortedStack
+    then stack
     else
       let
         newdfs = dfs (head unvisited) graph Set.empty
-        sortedStack' = filter (\a -> Set.notMember a (Set.fromList newdfs)) sortedStack
-      in dfsSort graph visited' $ sortedStack' ++ newdfs
+        stack' = filter (\a -> Set.notMember a (Set.fromList newdfs)) stack
+      in dfsSort graph visited' $ stack' ++ newdfs
 
 dfs :: Syllogism -> [Syllogism] -> Set.Set Syllogism -> [Syllogism]
-dfs node graph visited =
+dfs node@(_,curConc) graph visited =
   let
     unvisited = [n | n <- graph, Set.notMember n visited]
-    children = [c | c <- unvisited, Set.member (snd node) (fst c)]
+    children = [c | c@(childPrems,_) <- unvisited, Set.member curConc childPrems]
     next = children
     visited' = Set.union visited (Set.fromList ([node] ++ next))
   in

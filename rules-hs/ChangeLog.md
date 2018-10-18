@@ -2,5 +2,5 @@
 
 ## Unreleased changes
 
-- pretreat: massages Rules into tuple with Sets, sorts using quicksort-style algorithm
+- pretreat: massages Rules into tuple with Sets, sorts using topological sort algorithm
 - inferoutputs: builds "knowledge" starting from input assertions, and walking through (pretreated) rules
