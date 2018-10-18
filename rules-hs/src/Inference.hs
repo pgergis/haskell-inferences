@@ -2,8 +2,6 @@
 
 module Inference where
 
--- import Debug.Trace
-
 import Data.Aeson
 import GHC.Generics
 import Data.List
@@ -42,19 +40,15 @@ pretreatSort rules@(r:rest) =
   if isSyllogisticallySorted rules
   then rules
   else
-    -- trace ("sorting: " ++ show rules) $
-    -- pretreatSort $ sortBy compareSyllogisms (rest++[r])
     dfsSort r rules [r] (Set.singleton r)
 
 dfsSort :: Syllogism -> [Syllogism] -> Pretreated -> Set.Set Syllogism -> Pretreated
 dfsSort start graph path visited =
-  -- trace ("start: " ++ show start ++ "\nnext: " ++ show next ++ "\npath: " ++ show path) $
   let
     filterUnvisited = filter (\a -> Set.notMember a visited)
     next = filterUnvisited $ filter ((flip dependentOn) start) graph
     visited' = Set.union visited (Set.fromList next)
   in
-    -- trace ("new next: " ++ show next' ++ "\nunvisited: " ++ (show $ filterUnvisited graph)) $
     if next == []
     then
       let unvisited = filterUnvisited graph in
