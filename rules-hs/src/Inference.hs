@@ -2,6 +2,8 @@
 
 module Inference where
 
+-- import Debug.Trace
+
 import Data.Aeson
 import GHC.Generics
 import Data.List
@@ -32,10 +34,36 @@ pretreat rules = reverse $ pretreatSort [(Set.fromList (premises rule), conclusi
 dependentOn :: Syllogism -> Syllogism -> Bool
 s1 `dependentOn` s2 = Set.member (snd s2) (fst s1)
 
+-- dfsSort :: [Syllogism] -> Set.Set Syllogism -> [Syllogism] -> Pretreated
+-- dfsSort graph visited sortedStack =
+--   -- trace ("sortedStack: " ++ show sortedStack) $
+--   let
+--       visited' = Set.union visited (Set.fromList (sortedStack))
+--       unvisited = filter (\a -> Set.notMember a visited') graph
+--   in
+--     if unvisited == []
+--     then sortedStack
+--     else
+--       dfsSort graph visited' $ sortedStack ++ (dfs (head unvisited) graph visited')
+
+-- dfs :: Syllogism -> [Syllogism] -> Set.Set Syllogism -> [Syllogism]
+-- dfs node graph visited =
+--   -- trace ("dfs on node: " ++ show node) $
+--   let
+--     unvisited = [n | n <- graph, Set.notMember n visited]
+--     children = [c | c <- unvisited, Set.member (snd node) (fst c)]
+--     next = children
+--     visited' = Set.union visited (Set.fromList ([node] ++ next))
+--   in
+--     if next == []
+--     then [node]
+--     else [node] ++ (dfs (head next) graph visited')
+
 pretreatSort :: [Syllogism] -> Pretreated
 pretreatSort [] = []
 pretreatSort (r:[]) = [r]
 pretreatSort (r1:r2:[]) = if r1 `dependentOn` r2 then [r2,r1] else [r1,r2]
+-- pretreatSort rules = dfsSort rules Set.empty []
 pretreatSort rules@(r:rest) =
   if isSyllogisticallySorted rules
   then rules
@@ -56,12 +84,6 @@ dfsSort start graph path visited =
         then path
         else pretreatSort (unvisited++path)
     else concat $ map (\node -> dfsSort node graph (path++[node]) visited') next
-
-compareSyllogisms :: Syllogism -> Syllogism -> Ordering
-compareSyllogisms s1 s2
-  | Set.member (snd s1) (fst s2) = GT
-  | Set.member (snd s2) (fst s1) = LT
-  | otherwise = EQ
 
 isSyllogisticallySorted :: Pretreated -> Bool
 isSyllogisticallySorted [] = True
