@@ -16,17 +16,50 @@ data Rule = Rule
 instance ToJSON Rule
 instance FromJSON Rule
 
-type Pretreated = [(Set.Set Type, Type)]
+type Pretreated = [Syllogism]
+type Premises = Set.Set Type
+type Conclusion = Type
+type Syllogism = (Premises, Conclusion)
+
+-----------------
+-- Pretreating --
+-----------------
 
 pretreat :: [Rule] -> Pretreated
-pretreat rules = pretreatSorter [(Set.fromList (premises rule), conclusion rule) | rule <- rules]
+pretreat rules = reverse $ pretreatSort [(Set.fromList (premises rule), conclusion rule) | rule <- rules]
 
-pretreatSorter :: Pretreated -> Pretreated
-pretreatSorter [] = []
-pretreatSorter (rule@(prems, conc):rules) =
-  let prereqs = pretreatSorter [(p,c) | (p,c) <- rules, Set.member c prems]
-      others = pretreatSorter [(p,c) | (p,c) <- rules, Set.notMember c prems]
-  in others ++ [rule] ++ prereqs
+pretreatSort :: [Syllogism] -> Pretreated
+pretreatSort rules = dfsSort rules Set.empty []
+
+dfsSort :: [Syllogism] -> Set.Set Syllogism -> [Syllogism] -> Pretreated
+dfsSort graph visited sortedStack =
+  let
+      visited' = Set.union visited (Set.fromList (sortedStack))
+      unvisited = filter (\a -> Set.notMember a visited') graph
+  in
+    if unvisited == []
+    then sortedStack
+    else
+      let
+        newdfs = dfs (head unvisited) graph Set.empty
+        sortedStack' = filter (\a -> Set.notMember a (Set.fromList newdfs)) sortedStack
+      in dfsSort graph visited' $ sortedStack' ++ newdfs
+
+dfs :: Syllogism -> [Syllogism] -> Set.Set Syllogism -> [Syllogism]
+dfs node graph visited =
+  let
+    unvisited = [n | n <- graph, Set.notMember n visited]
+    children = [c | c <- unvisited, Set.member (snd node) (fst c)]
+    next = children
+    visited' = Set.union visited (Set.fromList ([node] ++ next))
+  in
+    if next == []
+    then [node]
+    else [node] ++ (dfs (head next) graph visited')
+
+---------------
+-- Inference --
+---------------
 
 inferoutputs :: Pretreated -> [Type] -> [Type]
 inferoutputs rules assertions = Set.elems $ inferoutputsHelper rules (Set.fromList assertions)
