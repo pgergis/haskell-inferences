@@ -4,14 +4,6 @@ import Test.Hspec
 import Inference
 import qualified Data.Set as Set
 
-isSyllogisticallySorted :: Pretreated -> Bool
-isSyllogisticallySorted [] = True
-isSyllogisticallySorted (r:[]) = True
-isSyllogisticallySorted rules@(r:rest) = and [(premisesNotInFutureConclusions r rest), (isSyllogisticallySorted rest)]
-
-premisesNotInFutureConclusions :: Syllogism -> [Syllogism] -> Bool
-premisesNotInFutureConclusions r rs = Set.disjoint (fst r) (Set.fromList $ snd $ unzip rs)
-
 main :: IO ()
 main = hspec $
   let
@@ -68,31 +60,25 @@ main = hspec $
       describe "inferoutputs" $ do
         it "infers nothing from rules if nothing is asserted" $ do
           inferoutputs (pretreat [rule1]) [] `shouldBe` []
-
         it "infers nothing from assertions if no rules are given" $ do
           inferoutputs (pretreat []) p1 `shouldBe` []
-
         it "infers nothing if no rules and no assertions are given" $ do
           inferoutputs (pretreat []) [] `shouldBe` []
-
         it "infers conclusion when premises are asserted" $ do
           inferoutputs (pretreat [rule1]) p1 `shouldBe` [c1]
-
         it "infers all conclusions when all rule premises are asserted" $ do
           inferoutputs (pretreat [rule1, rule3]) (p1++p3) `shouldBe` [c1,c3]
-
         it "infers Rule 1 conclusion but not Rule 3 conclusion if only Rule 1 premises asserted" $ do
           inferoutputs (pretreat [rule1,rule3]) p1 `shouldBe` [c1]
-
         it "infers all conclusions from chain of conclusions -> premises" $ do
           inferoutputs (pretreat [rule1,rule2,rule3]) (p1++["d","f"]) `shouldBe` [c1,c2,c3]
 
       describe "failing test" $ do
         it "this ruleset fails to produce the correct output" $ do
           inferoutputs (pretreat failing) (["H"]) `shouldBe` ["C", "E", "G"]
-
         it "handles multiple premises to same conclusion" $ do
           inferoutputs (pretreat [fail1,fail2,fail3,fail4]) (["H"]) `shouldBe` ["C", "E", "G"]
-
         it "handles disjointed premises" $ do
           inferoutputs (pretreat [fail2,fail3,fail4]) (["H"]) `shouldBe` ["E", "G"]
+        it "infers nothing when all premises are disjointed" $ do
+          inferoutputs (pretreat [fail1,fail3]) (["C"]) `shouldBe` []
