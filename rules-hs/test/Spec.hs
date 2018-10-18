@@ -4,6 +4,14 @@ import Test.Hspec
 import Inference
 import qualified Data.Set as Set
 
+isSyllogisticallySorted :: Pretreated -> Bool
+isSyllogisticallySorted [] = True
+isSyllogisticallySorted (r:[]) = True
+isSyllogisticallySorted rules@(r:rest) = and [(premisesNotInFutureConclusions r rest), (isSyllogisticallySorted rest)]
+
+premisesNotInFutureConclusions :: Syllogism -> [Syllogism] -> Bool
+premisesNotInFutureConclusions r rs = Set.disjoint (fst r) (Set.fromList $ snd $ unzip rs)
+
 main :: IO ()
 main = hspec $
   let
@@ -34,37 +42,26 @@ main = hspec $
 
         it "returns list where no premises appear in proceeding conclusions (1 of 6)" $ do
           pretreat [rule1,rule3,rule2] `shouldBe` [(Set.fromList p3, c3), (Set.fromList p2, c2), (Set.fromList p1, c1)]
-
         it "returns list where no premises appear in proceeding conclusions (2 of 6)" $ do
           pretreat [rule1,rule2,rule3] `shouldBe` [(Set.fromList p3, c3), (Set.fromList p2, c2), (Set.fromList p1, c1)]
-
         it "returns list where no premises appear in proceeding conclusions (3 of 6)" $ do
           pretreat [rule2,rule1,rule3] `shouldBe` [(Set.fromList p3, c3), (Set.fromList p2, c2), (Set.fromList p1, c1)]
-
         it "returns list where no premises appear in proceeding conclusions (4 of 6)" $ do
           pretreat [rule2,rule3,rule1] `shouldBe` [(Set.fromList p3, c3), (Set.fromList p2, c2), (Set.fromList p1, c1)]
-
         it "returns list where no premises appear in proceeding conclusions (5 of 6)" $ do
           pretreat [rule3,rule1,rule2] `shouldBe` [(Set.fromList p3, c3), (Set.fromList p2, c2), (Set.fromList p1, c1)]
-
         it "returns list where no premises appear in proceeding conclusions (6 of 6)" $ do
           pretreat [rule3,rule2,rule1] `shouldBe` [(Set.fromList p3, c3), (Set.fromList p2, c2), (Set.fromList p1, c1)]
-
         it "handles failing test cases (1 of 6)" $ do
           pretreat failing `shouldBe` reverse [(Set.fromList ["H"], "G"), (Set.fromList ["G"], "E"), (Set.fromList ["E"], "C")]
-
         it "handles failing test cases (2 of 6)" $ do
           pretreat [fail1,fail2,fail3] `shouldBe` reverse [(Set.fromList ["H"], "G"), (Set.fromList ["G"], "E"), (Set.fromList ["E"], "C")]
-
         it "handles failing test cases (3 of 6)" $ do
           pretreat [fail1,fail3,fail2] `shouldBe` reverse [(Set.fromList ["H"], "G"), (Set.fromList ["G"], "E"), (Set.fromList ["E"], "C")]
-
         it "handles failing test cases (4 of 6)" $ do
           pretreat [fail2,fail1,fail3] `shouldBe` reverse [(Set.fromList ["H"], "G"), (Set.fromList ["G"], "E"), (Set.fromList ["E"], "C")]
-
         it "handles failing test cases (5 of 6)" $ do
           pretreat [fail2,fail3,fail1] `shouldBe` reverse [(Set.fromList ["H"], "G"), (Set.fromList ["G"], "E"), (Set.fromList ["E"], "C")]
-
         it "handles failing test cases (6 of 6)" $ do
           pretreat failing `shouldBe` reverse [(Set.fromList ["H"], "G"), (Set.fromList ["G"], "E"), (Set.fromList ["E"], "C")]
 

@@ -2,8 +2,6 @@
 
 module Inference where
 
--- import Debug.Trace
-
 import Data.Aeson
 import GHC.Generics
 import Data.List
@@ -31,67 +29,34 @@ type Syllogism = (Premises, Conclusion)
 pretreat :: [Rule] -> Pretreated
 pretreat rules = reverse $ pretreatSort [(Set.fromList (premises rule), conclusion rule) | rule <- rules]
 
-dependentOn :: Syllogism -> Syllogism -> Bool
-s1 `dependentOn` s2 = Set.member (snd s2) (fst s1)
-
--- dfsSort :: [Syllogism] -> Set.Set Syllogism -> [Syllogism] -> Pretreated
--- dfsSort graph visited sortedStack =
---   -- trace ("sortedStack: " ++ show sortedStack) $
---   let
---       visited' = Set.union visited (Set.fromList (sortedStack))
---       unvisited = filter (\a -> Set.notMember a visited') graph
---   in
---     if unvisited == []
---     then sortedStack
---     else
---       dfsSort graph visited' $ sortedStack ++ (dfs (head unvisited) graph visited')
-
--- dfs :: Syllogism -> [Syllogism] -> Set.Set Syllogism -> [Syllogism]
--- dfs node graph visited =
---   -- trace ("dfs on node: " ++ show node) $
---   let
---     unvisited = [n | n <- graph, Set.notMember n visited]
---     children = [c | c <- unvisited, Set.member (snd node) (fst c)]
---     next = children
---     visited' = Set.union visited (Set.fromList ([node] ++ next))
---   in
---     if next == []
---     then [node]
---     else [node] ++ (dfs (head next) graph visited')
-
 pretreatSort :: [Syllogism] -> Pretreated
-pretreatSort [] = []
-pretreatSort (r:[]) = [r]
-pretreatSort (r1:r2:[]) = if r1 `dependentOn` r2 then [r2,r1] else [r1,r2]
--- pretreatSort rules = dfsSort rules Set.empty []
-pretreatSort rules@(r:rest) =
-  if isSyllogisticallySorted rules
-  then rules
-  else
-    dfsSort r rules [r] (Set.singleton r)
+pretreatSort rules = dfsSort rules Set.empty []
 
-dfsSort :: Syllogism -> [Syllogism] -> Pretreated -> Set.Set Syllogism -> Pretreated
-dfsSort start graph path visited =
+dfsSort :: [Syllogism] -> Set.Set Syllogism -> [Syllogism] -> Pretreated
+dfsSort graph visited sortedStack =
   let
-    filterUnvisited = filter (\a -> Set.notMember a visited)
-    next = filterUnvisited $ filter ((flip dependentOn) start) graph
-    visited' = Set.union visited (Set.fromList next)
+      visited' = Set.union visited (Set.fromList (sortedStack))
+      unvisited = filter (\a -> Set.notMember a visited') graph
+  in
+    if unvisited == []
+    then sortedStack
+    else
+      let
+        newdfs = dfs (head unvisited) graph Set.empty
+        sortedStack' = filter (\a -> Set.notMember a (Set.fromList newdfs)) sortedStack
+      in dfsSort graph visited' $ sortedStack' ++ newdfs
+
+dfs :: Syllogism -> [Syllogism] -> Set.Set Syllogism -> [Syllogism]
+dfs node graph visited =
+  let
+    unvisited = [n | n <- graph, Set.notMember n visited]
+    children = [c | c <- unvisited, Set.member (snd node) (fst c)]
+    next = children
+    visited' = Set.union visited (Set.fromList ([node] ++ next))
   in
     if next == []
-    then
-      let unvisited = filterUnvisited graph in
-        if unvisited == []
-        then path
-        else pretreatSort (unvisited++path)
-    else concat $ map (\node -> dfsSort node graph (path++[node]) visited') next
-
-isSyllogisticallySorted :: Pretreated -> Bool
-isSyllogisticallySorted [] = True
-isSyllogisticallySorted (r:[]) = True
-isSyllogisticallySorted rules@(r:rest) = and [(premisesNotInFutureConclusions r rest), (isSyllogisticallySorted rest)]
-
-premisesNotInFutureConclusions :: Syllogism -> [Syllogism] -> Bool
-premisesNotInFutureConclusions r rs = Set.disjoint (fst r) (Set.fromList $ snd $ unzip rs)
+    then [node]
+    else [node] ++ (dfs (head next) graph visited')
 
 ---------------
 -- Inference --
