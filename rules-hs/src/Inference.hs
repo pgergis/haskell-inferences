@@ -20,35 +20,66 @@ instance ToJSON Rule
 instance FromJSON Rule
 
 type Pretreated = [Syllogism]
-type Syllogism = (Set.Set Type, Type)
+type Premises = Set.Set Type
+type Conclusion = Type
+type Syllogism = (Premises, Conclusion)
+
+-----------------
+-- Pretreating --
+-----------------
 
 pretreat :: [Rule] -> Pretreated
-pretreat rules = reverse $ dfs [(Set.fromList (premises rule), conclusion rule) | rule <- rules]
+pretreat rules = reverse $ pretreatSort [(Set.fromList (premises rule), conclusion rule) | rule <- rules]
 
 dependentOn :: Syllogism -> Syllogism -> Bool
-r1 `dependentOn` r2 = Set.member (snd r2) (fst r1)
+s1 `dependentOn` s2 = Set.member (snd s2) (fst s1)
 
-dfs :: [Syllogism] -> Pretreated
-dfs [] = []
-dfs (r:[]) = [r]
-dfs (r1:r2:[]) = if r1 `dependentOn` r2 then [r2,r1] else [r1,r2]
-dfs (r:rules) = dfs' r rules [r] Set.empty
+pretreatSort :: [Syllogism] -> Pretreated
+pretreatSort [] = []
+pretreatSort (r:[]) = [r]
+pretreatSort (r1:r2:[]) = if r1 `dependentOn` r2 then [r2,r1] else [r1,r2]
+pretreatSort rules@(r:rest) =
+  if isSyllogisticallySorted rules
+  then rules
+  else
+    -- trace ("sorting: " ++ show rules) $
+    -- pretreatSort $ sortBy compareSyllogisms (rest++[r])
+    dfsSort r rules [r] (Set.singleton r)
 
-dfs' :: Syllogism -> [Syllogism] -> Pretreated -> Set.Set Syllogism -> Pretreated
-dfs' start graph path visited =
+dfsSort :: Syllogism -> [Syllogism] -> Pretreated -> Set.Set Syllogism -> Pretreated
+dfsSort start graph path visited =
+  -- trace ("start: " ++ show start ++ "\nnext: " ++ show next ++ "\npath: " ++ show path) $
   let
     filterUnvisited = filter (\a -> Set.notMember a visited)
     next = filterUnvisited $ filter ((flip dependentOn) start) graph
     visited' = Set.union visited (Set.fromList next)
   in
-    -- trace (show start ++ " | " ++ show graph ++ " | " ++ show path ++ " | " ++ show visited) $
+    -- trace ("new next: " ++ show next' ++ "\nunvisited: " ++ (show $ filterUnvisited graph)) $
     if next == []
     then
       let unvisited = filterUnvisited graph in
         if unvisited == []
         then path
-        else dfs (unvisited++path)
-    else concat $ map (\node -> dfs' node graph (path++[node]) visited') next
+        else pretreatSort (unvisited++path)
+    else concat $ map (\node -> dfsSort node graph (path++[node]) visited') next
+
+compareSyllogisms :: Syllogism -> Syllogism -> Ordering
+compareSyllogisms s1 s2
+  | Set.member (snd s1) (fst s2) = GT
+  | Set.member (snd s2) (fst s1) = LT
+  | otherwise = EQ
+
+isSyllogisticallySorted :: Pretreated -> Bool
+isSyllogisticallySorted [] = True
+isSyllogisticallySorted (r:[]) = True
+isSyllogisticallySorted rules@(r:rest) = and [(premisesNotInFutureConclusions r rest), (isSyllogisticallySorted rest)]
+
+premisesNotInFutureConclusions :: Syllogism -> [Syllogism] -> Bool
+premisesNotInFutureConclusions r rs = Set.disjoint (fst r) (Set.fromList $ snd $ unzip rs)
+
+---------------
+-- Inference --
+---------------
 
 inferoutputs :: Pretreated -> [Type] -> [Type]
 inferoutputs rules assertions = Set.elems $ inferoutputsHelper rules (Set.fromList assertions)
