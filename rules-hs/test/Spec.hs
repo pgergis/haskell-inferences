@@ -1,5 +1,3 @@
-module Spec where
-
 import Test.Hspec
 import Inference
 import qualified Data.Set as Set

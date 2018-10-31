@@ -26,7 +26,7 @@ type Syllogism = (Premises, Conclusion)
 -----------------
 
 pretreat :: [Rule] -> Pretreated
-pretreat rules = reverse $ pretreatSort [(Set.fromList (premises rule), conclusion rule) | rule <- rules]
+pretreat rules = pretreatSort [(Set.fromList (premises rule), conclusion rule) | rule <- rules]
 
 pretreatSort :: [Syllogism] -> Pretreated
 pretreatSort rules = dfsSort rules Set.empty []
@@ -41,9 +41,9 @@ dfsSort graph visited stack =
     then stack
     else
       let
-        newdfs = dfs (head unvisited) graph Set.empty
-        stack' = filter (\a -> Set.notMember a (Set.fromList newdfs)) stack
-      in dfsSort graph visited' $ stack' ++ newdfs
+        newdfs = dfs (head unvisited) graph visited'
+        stack' = stack ++ newdfs
+      in dfsSort graph visited' stack'
 
 dfs :: Syllogism -> [Syllogism] -> Set.Set Syllogism -> [Syllogism]
 dfs node@(_,curConc) graph visited =
@@ -55,7 +55,7 @@ dfs node@(_,curConc) graph visited =
   in
     if next == []
     then [node]
-    else [node] ++ (dfs (head next) graph visited')
+    else (dfs (head next) graph visited') ++ [node]
 
 ---------------
 -- Inference --
